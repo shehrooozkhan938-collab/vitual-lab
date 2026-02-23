@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Lab - Trusted Partner in Health</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f0f4f8;
+            --fg: #0f172a;
+            --fg-muted: #64748b;
+            --accent: #0056b3;
+            --accent-light: #3b82f6;
+            --primary: #004080;
+            --whatsapp: #25D366;
+            --sms: #3b82f6;
+            --card: rgba(255, 255, 255, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.7);
+            --glass-highlight: rgba(255, 255, 255, 0.9);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #e0e7ff 0%, #f0f4f8 50%, #e0f2fe 100%);
+            color: var(--fg);
+            overflow-x: hidden;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+        h1, h2, h3, h4 { font-family: 'Space Grotesk', sans-serif; line-height: 1.2; }
+
+        /* --- Visual Effects --- */
+        .blob {
+            position: fixed; border-radius: 50%; filter: blur(90px); opacity: 0.7; z-index: -2;
+            animation: blob-move 25s infinite alternate ease-in-out;
+        }
+        .blob-1 { top: -15%; left: -15%; width: 800px; height: 800px; background: radial-gradient(circle, rgba(59, 130, 246, 0.5) 0%, rgba(59, 130, 246, 0) 70%); }
+        .blob-2 { bottom: -15%; right: -15%; width: 700px; height: 700px; background: radial-gradient(circle, rgba(16, 185, 129, 0.4) 0%, rgba(16, 185, 129, 0) 70%); animation-delay: -10s; }
+        .blob-3 { top: 40%; left: 30%; width: 500px; height: 500px; background: radial-gradient(circle, rgba(139, 92, 246, 0.3) 0%, rgba(139, 92, 246, 0) 70%); animation-delay: -5s; }
+
+        @keyframes blob-move {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(40px, -40px) scale(1.1); }
+            100% { transform: translate(-20px, 40px) scale(0.95); }
+        }
+
+        #particle-canvas {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none;
+        }
+
+        /* --- Splash Screen --- */
+        #splash-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 999999;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1), visibility 1s;
+        }
+        #splash-screen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+        
+        .splash-logo-container {
+            position: relative; width: 280px; height: 280px; display: flex; align-items: center; justify-content: center;
+        }
+        
+        .splash-ring {
+            position: absolute; width: 100%; height: 100%; border-radius: 50%;
+            border: 4px solid transparent; 
+            border-top-color: var(--accent); 
+            border-right-color: var(--accent-light);
+            animation: spin 1.5s linear infinite;
+            filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.5));
+        }
+        .splash-ring::after {
+            content: ''; position: absolute; top: 10px; left: 10px; right: 10px; bottom: 10px; border-radius: 50%;
+            border: 4px solid transparent; border-bottom-color: var(--primary); border-left-color: var(--accent-light);
+            animation: spin 2s linear infinite reverse; opacity: 0.6;
+        }
+
+        .splash-logo { 
+            width: 220px; height: auto; z-index: 2; 
+            animation: logo-float 3s ease-in-out infinite; 
+            filter: drop-shadow(0 20px 30px rgba(0, 86, 179, 0.2));
+        }
+        
+        .splash-text { margin-top: 30px; font-family: 'Space Grotesk', sans-serif; font-size: 1.8rem; font-weight: 700; color: var(--accent); letter-spacing: 4px; opacity: 0; animation: fade-in 1s ease forwards 0.5s; }
+        
+        .secure-badge-splash {
+            margin-top: 30px; display: flex; align-items: center; gap: 8px; 
+            background: #f0fdf4; border: 1px solid #86efac; color: #15803d;
+            padding: 8px 16px; border-radius: 50px; font-weight: 600; font-size: 0.85rem;
+            box-shadow: 0 4px 15px rgba(22, 163, 74, 0.1);
+            opacity: 0; animation: fade-in 1s ease forwards 1s;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fade-in { to { opacity: 1; } }
+        @keyframes logo-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+        /* --- Reveal Animations --- */
+        .reveal { opacity: 0; transform: translateY(40px); transition: all 1s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        .reveal.visible { opacity: 1; transform: translateY(0); }
+        .reveal-delay-1 { transition-delay: 0.1s; }
+        .reveal-delay-2 { transition-delay: 0.2s; }
+        .reveal-delay-3 { transition-delay: 0.3s; }
+
+        /* --- 3D Tilt Card --- */
+        .tilt-card { transform-style: preserve-3d; transform: perspective(1000px); }
+        .tilt-content { transform: translateZ(20px); }
+
+        /* --- Components --- */
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--primary) 100%);
+            color: white; font-weight: 600; padding: 14px 32px; border-radius: 50px;
+            border: none; cursor: pointer; font-family: 'Space Grotesk', sans-serif; font-size: 1rem;
+            transition: all 0.3s ease; box-shadow: 0 10px 25px -5px rgba(0, 86, 179, 0.4);
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+            text-decoration: none; position: relative; overflow: hidden;
+        }
+        .btn-primary::after {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(255,255,255,0.2), transparent);
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .btn-primary:hover::after { opacity: 1; }
+        .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 20px 30px -5px rgba(0, 86, 179, 0.5); }
+        
+        .btn-sms { background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%); box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.4); }
+        .btn-sms:hover { box-shadow: 0 20px 30px -5px rgba(59, 130, 246, 0.5); }
+
+        .btn-whatsapp { background: linear-gradient(135deg, #25D366 0%, #128C7E 100%); box-shadow: 0 10px 25px -5px rgba(37, 211, 102, 0.4); }
+        .btn-whatsapp:hover { box-shadow: 0 20px 30px -5px rgba(37, 211, 102, 0.5); }
+
+        .glass-card {
+            background: var(--card); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.05);
+            border-radius: 24px; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative; overflow: hidden;
+        }
+        .glass-card::before {
+            content: ""; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: 0.5s;
+        }
+        .glass-card:hover::before { left: 100%; }
+        .glass-card:hover { background: var(--glass-highlight); transform: translateY(-8px); box-shadow: 0 20px 50px -10px rgba(0, 86, 179, 0.15); border-color: white; }
+
+        nav.glass-nav {
+            background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.8); box-shadow: 0 4px 30px -5px rgba(0, 0, 0, 0.05);
+        }
+        
+        /* --- Animated Logo --- */
+        .nav-logo-wrapper {
+            position: relative; display: flex; align-items: center; justify-content: center;
+            transition: transform 0.3s ease;
+        }
+        .nav-logo-wrapper:hover { transform: scale(1.05); }
+
+        .nav-logo { 
+            height: 100px; width: auto; position: relative; z-index: 2;
+            animation: logo-pulse-glow 4s infinite ease-in-out, logo-float 6s infinite ease-in-out;
+            filter: drop-shadow(0 5px 15px rgba(0, 86, 179, 0.2));
+        }
+
+        .nav-logo-ring {
+            position: absolute; width: 110%; height: 110%; top: -5%; left: -5%; border-radius: 50%; 
+            border: 2px solid transparent; border-top-color: rgba(59, 130, 246, 0.6); 
+            border-bottom-color: rgba(59, 130, 246, 0.6);
+            animation: spin 4s linear infinite; z-index: 1; pointer-events: none;
+        }
+
+        @keyframes logo-pulse-glow {
+            0%, 100% { filter: drop-shadow(0 5px 15px rgba(0, 86, 179, 0.2)); }
+            50% { filter: drop-shadow(0 5px 25px rgba(0, 86, 179, 0.6)); }
+        }
+        
+        .clock-badge {
+            background: rgba(0, 86, 179, 0.08); border: 1px solid rgba(0, 86, 179, 0.15);
+            padding: 8px 16px; border-radius: 30px; font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600; color: var(--accent); font-size: 0.85rem;
+            display: flex; align-items: center; gap: 8px; backdrop-filter: blur(5px);
+        }
+
+        .hero-text {
+            background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border-radius: 32px; padding: 50px; border: 1px solid rgba(255,255,255,0.8);
+            box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.05);
+        }
+
+        .partner-card { 
+            background: white; border: 1px solid rgba(255,255,255,0.6); border-radius: 20px; 
+            padding: 20px; text-align: center; transition: all 0.3s; box-shadow: 0 5px 20px rgba(0,0,0,0.03); 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;
+        }
+        .partner-card:hover { transform: translateY(-8px); box-shadow: 0 15px 35px rgba(0, 86, 179, 0.12); border-color: var(--accent-light); }
+        .partner-card img { width: 100%; height: 100px; object-fit: cover; border-radius: 12px; margin-bottom: 12px; }
+        
+        .whatsapp-float { 
+            position: fixed; bottom: 100px; right: 24px; z-index: 100; width: 65px; height: 65px; 
+            background: linear-gradient(135deg, var(--whatsapp) 0%, #128C7E 100%); 
+            border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+            box-shadow: 0 10px 25px rgba(37, 211, 102, 0.5); cursor: pointer; border: none; 
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .whatsapp-float:hover { transform: scale(1.15); }
+        .whatsapp-float svg { width: 32px; height: 32px; fill: white; }
+
+        .chatbot-widget { position: fixed; bottom: 24px; right: 24px; z-index: 99; }
+        .chatbot-btn { 
+            width: 65px; height: 65px; border-radius: 24px; 
+            background: linear-gradient(135deg, var(--accent) 0%, var(--primary) 100%); 
+            border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; 
+            box-shadow: 0 10px 25px rgba(0, 86, 179, 0.4);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .chatbot-btn:hover { transform: scale(1.1); }
+        .chatbot-btn svg { width: 30px; height: 30px; stroke: white; }
+        
+        .chatbot-panel { 
+            position: absolute; bottom: 80px; right: 0; width: 380px; max-width: calc(100vw - 48px); 
+            background: white; border-radius: 24px; overflow: hidden; opacity: 0; visibility: hidden; 
+            transform: translateY(20px) scale(0.95); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            box-shadow: 0 30px 90px rgba(0, 0, 0, 0.15); border: 1px solid rgba(0,0,0,0.05);
+        }
+        .chatbot-panel.active { opacity: 1; visibility: visible; transform: translateY(0) scale(1); }
+        .chatbot-header { background: var(--accent); padding: 20px 24px; display: flex; align-items: center; gap: 12px; }
+        .chatbot-messages { height: 300px; overflow-y: auto; padding: 20px; background: #f8fafc; }
+        .message-bubble { max-width: 85%; padding: 12px 16px; border-radius: 18px; font-size: 0.95rem; margin-bottom: 10px; line-height: 1.5; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .chat-message.bot .message-bubble { background: white; border: 1px solid #e2e8f0; color: #334155; border-bottom-left-radius: 4px; }
+        .chat-message.user .message-bubble { background: var(--accent); color: white; margin-left: auto; border-bottom-right-radius: 4px; }
+        .chatbot-input { padding: 16px 20px; border-top: 1px solid #e2e8f0; display: flex; gap: 10px; background: white; }
+        .chatbot-input input { flex: 1; background: #f1f5f9; border: none; border-radius: 12px; padding: 12px 16px; outline: none; font-size: 0.95rem; transition: background 0.2s; }
+        .chatbot-input input:focus { background: #e2e8f0; }
+        .quick-options { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 20px 16px; background: white; }
+        .quick-option { background: #eff6ff; border: 1px solid #dbeafe; border-radius: 20px; padding: 8px 16px; font-size: 0.85rem; cursor: pointer; color: var(--accent); font-weight: 500; transition: all 0.2s; }
+        .quick-option:hover { background: var(--accent); color: white; border-color: var(--accent); transform: translateY(-2px); }
+
+        .footer-credit { border-top: 1px solid rgba(255,255,255,0.1); margin-top: 24px; padding-top: 24px; width: 100%; text-align: center; font-size: 0.9rem; opacity: 0.9; }
+        
+        .secure-badge-footer {
+            display: inline-flex; align-items: center; gap: 6px; 
+            background: rgba(255,255,255,0.1); padding: 6px 14px; border-radius: 30px; 
+            font-size: 0.8rem; margin-bottom: 16px; border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .form-status { padding: 14px; border-radius: 12px; margin-bottom: 20px; font-size: 0.9rem; display: none; }
+        .form-status.error { background: #fee2e2; color: #b91c1c; display: block; border: 1px solid #fecaca; }
+        .form-status.success { background: #dcfce7; color: #15803d; display: block; border: 1px solid #bbf7d0; }
+
+        .form-group { margin-bottom: 20px; text-align: left; position: relative; }
+        .form-label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.9rem; color: var(--fg); }
+        .form-input { width: 100%; padding: 14px 18px; border-radius: 14px; background: white; border: 2px solid #e2e8f0; outline: none; transition: all 0.2s; font-size: 1rem; appearance: none; -webkit-appearance: none; }
+        .form-input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(0, 86, 179, 0.1); background: #fff; }
+        
+        /* Custom Select Arrow */
+        .select-wrapper { position: relative; }
+        .select-wrapper::after {
+            content: ''; position: absolute; top: 50%; right: 18px;
+            width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent;
+            border-top: 6px solid var(--fg-muted); pointer-events: none; transform: translateY(-50%);
+        }
+
+        /* --- Modal --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(8px);
+            z-index: 1000; display: flex; align-items: center; justify-content: center;
+            opacity: 0; visibility: hidden; transition: all 0.3s;
+        }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal-content {
+            background: white; padding: 40px; border-radius: 32px; width: 90%; max-width: 420px;
+            text-align: center; transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 25px 80px rgba(0,0,0,0.2);
+        }
+        .modal-overlay.active .modal-content { transform: scale(1); }
+        .modal-buttons { display: flex; flex-direction: column; gap: 16px; margin-top: 30px; }
+
+        /* --- Mobile Menu --- */
+        .mobile-menu-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); z-index: 60;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            opacity: 0; visibility: hidden; transition: all 0.3s;
+        }
+        .mobile-menu-overlay.active { opacity: 1; visibility: visible; }
+        .mobile-menu-overlay a {
+            color: white; font-size: 2rem; font-weight: 700; margin: 15px 0; text-decoration: none;
+            transition: color 0.2s; font-family: 'Space Grotesk', sans-serif;
+        }
+        .mobile-menu-overlay a:hover { color: var(--accent-light); }
+        .mobile-menu-close {
+            position: absolute; top: 20px; right: 20px; background: none; border: none;
+            color: white; font-size: 2.5rem; cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .nav-logo { height: 70px; }
+            .hero-text { padding: 24px; }
+            .splash-logo { width: 60%; }
+            .clock-badge { display: none; }
+            .partner-card img { height: 80px; }
+            .modal-content { padding: 24px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Visual Background Layers -->
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+    <canvas id="particle-canvas"></canvas>
+
+    <!-- Splash Screen -->
+    <div id="splash-screen">
+        <div class="splash-logo-container">
+            <div class="splash-ring"></div>
+            <img src="https://z-cdn-media.chatglm.cn/files/fe1157aa-dd2f-42fa-870c-cce40bcdaf63.png?auth_key=1871694615-1d5f469af0044e4f98685b18f46d9cb3-0-158bb64e2ebd7cde3101ab41a2800622" alt="Virtual Lab Logo" class="splash-logo">
+        </div>
+        <div class="splash-text">VIRTUAL LAB</div>
+        <div class="secure-badge-splash">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+            <span>Secure Connection</span>
+        </div>
+    </div>
+
+    <!-- Mobile Navigation Menu (Hidden by default) -->
+    <div id="mobileMenu" class="mobile-menu-overlay">
+        <button class="mobile-menu-close" onclick="toggleMobileMenu()">&times;</button>
+        <a href="#patron" onclick="toggleMobileMenu()">Patron</a>
+        <a href="#services" onclick="toggleMobileMenu()">Services</a>
+        <a href="#partners" onclick="toggleMobileMenu()">Partners</a>
+        <a href="#contact" onclick="toggleMobileMenu()">Contact</a>
+        <button class="btn-primary mt-8" onclick="openModal(); toggleMobileMenu();">Book Now</button>
+    </div>
+
+    <!-- Booking Modal Popup -->
+    <div id="bookingModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 class="text-2xl font-bold text-[var(--fg)] mb-2">Book Appointment</h3>
+            <p class="text-[var(--fg-muted)] mb-4">Choose your preferred method to connect.</p>
+            <div class="modal-buttons">
+                <button onclick="quickBook('whatsapp')" class="btn-primary btn-whatsapp w-full">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
+                    Book via WhatsApp
+                </button>
+                <button onclick="quickBook('sms')" class="btn-primary btn-sms w-full">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                    Book via SMS
+                </button>
+                <button onclick="closeModal()" class="btn-primary w-full" style="background: #f1f5f9; color: #64748b; box-shadow: none; border: 1px solid #e2e8f0;">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div id="main-content">
+        <!-- Navigation -->
+        <nav class="fixed top-0 left-0 right-0 z-50 glass-nav transition-all duration-300">
+            <div class="max-w-7xl mx-auto px-4 md:px-6 py-3 flex items-center justify-between">
+                <a href="#" class="nav-logo-wrapper">
+                    <div class="nav-logo-ring"></div>
+                    <img src="https://z-cdn-media.chatglm.cn/files/fe1157aa-dd2f-42fa-870c-cce40bcdaf63.png?auth_key=1871694615-1d5f469af0044e4f98685b18f46d9cb3-0-158bb64e2ebd7cde3101ab41a2800622" alt="Virtual Lab Logo" class="nav-logo">
+                </a>
+                
+                <div class="hidden md:flex items-center gap-8">
+                    <div class="clock-badge">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                        <span id="pakistan-time">--:--:--</span> PKT
+                    </div>
+                    <a href="#patron" class="text-[var(--fg-muted)] hover:text-[var(--accent)] transition-colors font-medium">Patron</a>
+                    <a href="#services" class="text-[var(--fg-muted)] hover:text-[var(--accent)] transition-colors font-medium">Services</a>
+                    <a href="#partners" class="text-[var(--fg-muted)] hover:text-[var(--accent)] transition-colors font-medium">Partners</a>
+                    <a href="#contact" class="text-[var(--fg-muted)] hover:text-[var(--accent)] transition-colors font-medium">Contact</a>
+                    <button class="btn-primary py-2 px-8 text-sm h-auto" onclick="openModal()">Book Now</button>
+                </div>
+                
+                <!-- Mobile Menu Toggle -->
+                <button class="md:hidden text-[var(--fg)] p-2" onclick="toggleMobileMenu()">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Hero Section -->
+        <section class="relative min-h-screen flex items-center pt-28 pb-12 overflow-hidden">
+            <div class="relative z-10 max-w-7xl mx-auto px-6 py-12 grid lg:grid-cols-2 gap-16 items-center w-full">
+                <div class="hero-text reveal tilt-card" data-tilt>
+                    <div class="tilt-content">
+                        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6 bg-blue-50 border border-blue-100 text-blue-700 font-semibold text-sm shadow-sm">
+                            <span class="w-2 h-2 rounded-full animate-pulse bg-blue-500"></span>
+                            <span>Serving 10+ Premium Partner Labs</span>
+                        </div>
+                        <h1 class="text-5xl md:text-6xl lg:text-7xl font-bold mb-6 text-[var(--fg)] leading-tight">
+                            Your Trusted<br>
+                            <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Partner in Health</span>
+                        </h1>
+                        <p class="text-lg mb-8 leading-relaxed text-[var(--fg-muted)] max-w-lg">
+                            We offer reliable, compassionate, and affordable medical diagnostic services. Professional sample collection at your doorstep with accurate results.
+                        </p>
+                        <div class="flex flex-wrap gap-4">
+                            <a href="https://wa.me/923145791790" target="_blank" rel="noopener noreferrer" class="inline-block">
+                                <button class="btn-primary btn-whatsapp">
+                                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
+                                    WhatsApp Us
+                                </button>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="reveal reveal-delay-1 relative hidden lg:block">
+                     <div class="glass-card p-4 tilt-card" data-tilt>
+                        <div class="tilt-content">
+                            <img src="https://images.unsplash.com/photo-1586773860418-d37222d8fce3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Modern Hospital Facility" class="w-full h-[450px] object-cover rounded-2xl shadow-2xl">
+                            <div class="absolute bottom-10 left-10 right-10 p-6 rounded-2xl bg-white/90 backdrop-blur-xl shadow-xl border border-white">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-lg">
+                                        <svg class="w-7 h-7 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                                    </div>
+                                    <div class="text-left">
+                                        <div class="font-bold text-lg text-[var(--fg)]">Modern Facilities</div>
+                                        <div class="text-sm text-[var(--fg-muted)]">Partnered with top-tier labs</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                     </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Patron Section -->
+        <section id="patron" class="relative py-24 z-10 overflow-hidden">
+            <div class="absolute top-0 right:0 w-1/2 h-1/2 bg-gradient-to-l from-blue-50/50 to-transparent -skew-x-12 z-0"></div>
+            <div class="max-w-7xl mx-auto px-6 relative z-10">
+                <div class="grid lg:grid-cols-2 gap-16 items-center">
+                    <div class="reveal order-2 lg:order-1 flex justify-center lg:justify-end">
+                        <div class="relative w-full max-w-md">
+                            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-blue-400/20 rounded-full blur-3xl z-0 animate-pulse"></div>
+                            <div class="relative z-10 tilt-card p-3" data-tilt>
+                                <div class="glass-card p-2 rounded-[40px] bg-white shadow-2xl border-none">
+                                    <div class="relative rounded-[32px] overflow-hidden aspect-[3/4] bg-slate-100">
+                                        <img src="https://z-cdn-media.chatglm.cn/files/4b1addd5-144d-45a2-8069-54241d59af8b.png?auth_key=1871866326-536d7801078741ce86f9cd9d4b40376f-0-eaaf6a22ea8b320548a69c4280a2c4e7" alt="Patron-in-Chief" class="w-full h-full object-cover object-top">
+                                        <div class="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent"></div>
+                                        <div class="absolute bottom-0 left-0 right-0 p-8 text-white">
+                                            <h3 class="text-3xl font-bold font-['Space_Grotesk']">Amel Khan Jadoon</h3>
+                                            <p class="text-blue-200 text-sm font-medium tracking-wider uppercase mt-1">Patron-in-Chief</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="reveal reveal-delay-1 order-1 lg:order-2">
+                        <div class="inline-block px-4 py-1.5 rounded-full bg-blue-100 text-blue-700 font-bold text-xs tracking-widest uppercase mb-6 border border-blue-200">
+                            Leadership
+                        </div>
+                        <h2 class="text-4xl md:text-5xl font-bold mb-6 text-[var(--fg)]">
+                            Meet Our <br><span class="text-[var(--accent)]">Patron-in-Chief</span>
+                        </h2>
+                        <p class="text-lg text-[var(--fg-muted)] mb-6 leading-relaxed">
+                            Driven by a passion for accessible healthcare, our Patron-in-Chief leads Virtual Lab with a vision to bridge the gap between patients and quality diagnostic services.
+                        </p>
+                        <p class="text-lg text-[var(--fg-muted)] mb-8 leading-relaxed">
+                            Under this esteemed guidance, we have established a network of trust, ensuring that every patient receives world-class care with a personal touch.
+                        </p>
+                        <div class="grid grid-cols-2 gap-6">
+                            <div><div class="text-3xl font-bold text-[var(--accent)]">10+</div><div class="text-sm text-[var(--fg-muted)] font-medium">Years Experience</div></div>
+                            <div><div class="text-3xl font-bold text-[var(--accent)]">100%</div><div class="text-sm text-[var(--fg-muted)] font-medium">Dedication</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Services Section -->
+        <section id="services" class="relative py-24 z-10">
+            <div class="max-w-7xl mx-auto px-6">
+                <div class="text-center max-w-3xl mx-auto mb-16">
+                    <span class="reveal font-bold tracking-widest text-sm uppercase text-[var(--accent)]">What We Do</span>
+                    <h2 class="reveal reveal-delay-1 text-3xl md:text-4xl lg:text-5xl font-bold mt-4 mb-6 text-[var(--fg)]">Comprehensive Diagnostic Care</h2>
+                </div>
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div class="reveal glass-card p-10 tilt-card" data-tilt>
+                        <div class="tilt-content">
+                            <div class="w-16 h-16 rounded-2xl flex items-center justify-center mb-8 bg-blue-100 text-[var(--accent)] shadow-sm">
+                                <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M9 22V12h6v10"/></svg>
+                            </div>
+                            <h3 class="text-2xl font-bold mb-4 text-[var(--fg)]">Home Sample Collection</h3>
+                            <p class="text-[var(--fg-muted)] leading-relaxed">Skilled phlebotomists visit your home at your convenience for painless, professional sample collection.</p>
+                        </div>
+                    </div>
+                    <div class="reveal reveal-delay-1 glass-card p-10 tilt-card" data-tilt>
+                        <div class="tilt-content">
+                            <div class="w-16 h-16 rounded-2xl flex items-center justify-center mb-8 bg-blue-100 text-[var(--accent)] shadow-sm">
+                                <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
+                            </div>
+                            <h3 class="text-2xl font-bold mb-4 text-[var(--fg)]">Lab of Your Choice</h3>
+                            <p class="text-[var(--fg-muted)] leading-relaxed">Choose from our network of certified partner laboratories. We deliver samples to your preferred center.</p>
+                        </div>
+                    </div>
+                    <div class="reveal reveal-delay-2 glass-card p-10 tilt-card" data-tilt>
+                        <div class="tilt-content">
+                            <div class="w-16 h-16 rounded-2xl flex items-center justify-center mb-8 bg-blue-100 text-[var(--accent)] shadow-sm">
+                                <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                            </div>
+                            <h3 class="text-2xl font-bold mb-4 text-[var(--fg)]">Reports at Doorstep</h3>
+                            <p class="text-[var(--fg-muted)] leading-relaxed">Receive your detailed diagnostic reports at your doorstep. Digital copies available via WhatsApp.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Partners Section -->
+        <section id="partners" class="relative py-24 z-10 bg-white/40">
+            <div class="max-w-7xl mx-auto px-6">
+                <div class="text-center mb-16">
+                    <span class="reveal font-bold tracking-widest text-sm uppercase text-[var(--accent)]">Our Network</span>
+                    <h2 class="reveal reveal-delay-1 text-3xl md:text-4xl font-bold mt-4 mb-6 text-[var(--fg)]">MOU Partner Laboratories</h2>
+                </div>
+                <div class="reveal reveal-delay-3 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+                    <div class="partner-card"><img src="https://images.unsplash.com/photo-1581595220892-b0739db3ba8c?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80" alt="Lab"><div class="font-semibold text-sm mt-2">Abbottabad Diagnostic Center</div></div>
+                    <div class="partner-card"><img src="https://images.unsplash.com/photo-1579154204601-01588f351e67?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80" alt="Lab"><div class="font-semibold text-sm mt-2">Premium Lab</div></div>
+                    <div class="partner-card"><img src="https://images.unsplash.com/photo-1532938911079-1b06ac7ceec7?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80" alt="Lab"><div class="font-semibold text-sm mt-2">Al-Hamd Diagnostic</div></div>
+                    <div class="partner-card"><img src="https://images.unsplash.com/photo-1576086213369-97a306d36557?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80" alt="Lab"><div class="font-semibold text-sm mt-2">Doctor Lab</div></div>
+                    <div class="partner-card"><img src="https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80" alt="Lab"><div class="font-semibold text-sm mt-2">Al-Ceena Lab</div></div>
+                    <div class="partner-card"><img src="https://images.unsplash.com/photo-1582719471384-894fbb16e074?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80" alt="Lab"><div class="font-semibold text-sm mt-2">Icon Lab</div></div>
+                    <div class="partner-card"><img src="https://images.unsplash.com/photo-1583912267550-d974311a9a6e?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80" alt="Lab"><div class="font-semibold text-sm mt-2">Valley Hospital Lab</div></div>
+                    <div class="partner-card"><img src="https://images.unsplash.com/photo-1516549655169-df83a0774514?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80" alt="Lab"><div class="font-semibold text-sm mt-2">Abbott City Lab</div></div>
+                    <div class="partner-card"><img src="https://images.unsplash.com/photo-1530026405186-ed1f139313f8?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80" alt="Lab"><div class="font-semibold text-sm mt-2">Biotest Lab</div></div>
+                    <div class="partner-card"><img src="https://images.unsplash.com/photo-1559757175-5700dde675bc?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80" alt="Lab"><div class="font-semibold text-sm mt-2">Khyber Lab</div></div>
+                    <div class="partner-card"><img src="https://images.unsplash.com/photo-1551076805-e1869033e561?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80" alt="Lab"><div class="font-semibold text-sm mt-2">Shaukat Khanum</div></div>
+                    <div class="partner-card"><img src="https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80" alt="Lab"><div class="font-semibold text-sm mt-2">IDC</div></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section id="contact" class="relative py-24 z-10">
+            <div class="max-w-7xl mx-auto px-6">
+                <div class="glass-card p-8 md:p-16 grid lg:grid-cols-2 gap-16 items-center bg-white/80">
+                    <div class="reveal">
+                        <span class="font-bold tracking-widest text-sm uppercase text-[var(--accent)]">Get In Touch</span>
+                        <h2 class="text-3xl md:text-4xl font-bold mt-4 mb-8 text-[var(--fg)]">Contact Us Today</h2>
+                        
+                        <div class="space-y-8 mt-8">
+                            <a href="tel:+923145791790" class="flex items-center gap-5 group">
+                                <div class="w-16 h-16 rounded-2xl flex items-center justify-center bg-white shadow-lg text-[var(--accent)] group-hover:scale-110 transition-transform flex-shrink-0 border border-gray-100">
+                                    <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+                                </div>
+                                <div>
+                                    <div class="text-sm text-[var(--fg-muted)] font-medium">Call Us</div>
+                                    <div class="font-bold text-xl text-[var(--fg)]">0314-5791790</div>
+                                </div>
+                            </a>
+                            <a href="mailto:virtualdiagnosticlab@gmail.com" class="flex items-center gap-5 group">
+                                <div class="w-16 h-16 rounded-2xl flex items-center justify-center bg-white shadow-lg text-[var(--accent)] group-hover:scale-110 transition-transform flex-shrink-0 border border-gray-100">
+                                    <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><path d="M22 6l-10 7L2 6"/></svg>
+                                </div>
+                                <div>
+                                    <div class="text-sm text-[var(--fg-muted)] font-medium">Email Us</div>
+                                    <div class="font-bold text-[var(--fg)]">virtualdiagnosticlab@gmail.com</div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="reveal reveal-delay-1 bg-white p-8 rounded-3xl shadow-2xl border border-gray-100">
+                        <div id="formStatus" class="form-status"></div>
+                        <form id="contactForm" onsubmit="return false;">
+                            <h3 class="text-2xl font-bold mb-8 text-[var(--fg)]">Book a Collection</h3>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Your Name *</label>
+                                <input type="text" id="name" placeholder="John Doe" required class="form-input">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Phone Number *</label>
+                                <input type="tel" id="phone" placeholder="03XX-XXXXXXX" required class="form-input">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Your Address *</label>
+                                <textarea id="address" rows="2" placeholder="House #, Street, City" required class="form-input resize-none"></textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Preferred Lab *</label>
+                                <div class="select-wrapper">
+                                    <select id="labChoice" required class="form-input">
+                                        <option value="" disabled selected>Select Lab</option>
+                                        <option value="Abbottabad Diagnostic Center">Abbottabad Diagnostic Center</option>
+                                        <option value="Premium Lab">Premium Lab</option>
+                                        <option value="Al-Hamd Diagnostic">Al-Hamd Diagnostic</option>
+                                        <option value="Doctor Lab">Doctor Lab</option>
+                                        <option value="Al-Ceena Lab">Al-Ceena Lab</option>
+                                        <option value="Icon Lab">Icon Lab</option>
+                                        <option value="Valley Hospital Lab">Valley Hospital Lab</option>
+                                        <option value="Abbott City Lab">Abbott City Lab</option>
+                                        <option value="Biotest Lab">Biotest Lab</option>
+                                        <option value="Khyber Lab">Khyber Lab</option>
+                                        <option value="Shaukat Khanum">Shaukat Khanum</option>
+                                        <option value="IDC">IDC</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Test Type (Optional)</label>
+                                <div class="select-wrapper">
+                                    <select id="testType" class="form-input">
+                                        <option value="" disabled selected>Select Test</option>
+                                        <option value="Blood Test">Blood Test</option>
+                                        <option value="Urine Test">Urine Test</option>
+                                        <option value="COVID-19 Test">COVID-19 Test</option>
+                                        <option value="Other">Other / Multiple</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                                <button type="button" onclick="handleBooking('whatsapp')" class="btn-primary btn-whatsapp w-full h-14">
+                                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
+                                    <span>WhatsApp</span>
+                                </button>
+                                <button type="button" onclick="handleBooking('sms')" class="btn-primary btn-sms w-full h-14">
+                                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                                    <span>SMS</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="relative py-20 bg-[var(--fg)] text-white z-10 mt-12">
+            <div class="max-w-7xl mx-auto px-6 flex flex-col items-center justify-center gap-8">
+                <div class="secure-badge-footer">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                    <span>SECURE CONNECTION</span>
+                </div>
+                <div class="flex flex-col md:flex-row items-center justify-between w-full gap-8">
+                    <div class="flex items-center justify-center md:justify-start">
+                         <img src="https://z-cdn-media.chatglm.cn/files/fe1157aa-dd2f-42fa-870c-cce40bcdaf63.png?auth_key=1871694615-1d5f469af0044e4f98685b18f46d9cb3-0-158bb64e2ebd7cde3101ab41a2800622" alt="Virtual Lab Logo" class="h-24 w-auto bg-white rounded-2xl p-3 shadow-2xl">
+                    </div>
+                    <div class="text-sm opacity-80 text-center md:text-right">
+                        2025 Virtual Lab. All rights reserved.<br>
+                        <span id="clock-footer" class="font-bold text-white"></span>
+                    </div>
+                </div>
+                <div class="footer-credit flex flex-col sm:flex-row items-center justify-center gap-3">
+                    <span class="opacity-60">Developed & Designed by</span>
+                    <div class="flex items-center gap-2">
+                        <img src="https://z-cdn-media.chatglm.cn/files/bc6ca15a-1b95-4061-87aa-a8b908ff98c6.jpg?auth_key=1871702608-85a471741bd34a3597a0e08c2d0062bd-0-467806edebedbd784103a7d1cc2f0871" alt="Think Nova Logo" class="h-10 w-auto rounded-md shadow-lg">
+                        <span class="font-bold text-xl tracking-wide">Think Nova</span>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- WhatsApp Button -->
+    <a href="https://wa.me/923145791790" target="_blank" rel="noopener noreferrer" class="whatsapp-float" aria-label="Contact on WhatsApp">
+        <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
+    </a>
+
+    <!-- Chatbot Widget -->
+    <div class="chatbot-widget">
+        <div id="chatbotPanel" class="chatbot-panel">
+            <div class="chatbot-header">
+                <div class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm">
+                    <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                </div>
+                <div>
+                    <div class="font-bold text-white text-lg">Zai Assistant</div>
+                    <div class="text-xs text-white/80">Online • Reply Fast</div>
+                </div>
+            </div>
+            <div id="chatMessages" class="chatbot-messages"></div>
+            <div class="quick-options">
+                <button class="quick-option" data-msg="Book a test">Book a test</button>
+                <button class="quick-option" data-msg="Prices">Prices</button>
+                <button class="quick-option" data-msg="Hours">Opening Hours</button>
+            </div>
+            <div class="chatbot-input">
+                <input type="text" id="chatInput" placeholder="Type a message...">
+                <button onclick="sendMsg()" style="background: var(--accent); border: none; border-radius: 12px; padding: 10px; cursor: pointer;">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                </button>
+            </div>
+        </div>
+        <button id="chatbotBtn" class="chatbot-btn" aria-label="Open chat">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        </button>
+    </div>
+
+    <script>
+        // --- Configuration ---
+        const CONFIG = {
+            whatsappNumber: '923145791790',
+            smsNumber: '+923145791790',
+            businessName: 'Virtual Lab'
+        };
+
+        const sanitize = (str) => str ? str.trim() : "";
+
+        // --- 1. Splash Screen ---
+        window.addEventListener('load', () => {
+            setTimeout(() => { 
+                document.getElementById('splash-screen').classList.add('hidden'); 
+            }, 2500);
+        });
+
+        // --- 2. Pakistan Standard Time (PKT) ---
+        function updateClock() {
+            try {
+                const options = { timeZone: 'Asia/Karachi', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
+                const timeString = new Date().toLocaleTimeString('en-US', options);
+                const navClock = document.getElementById('pakistan-time');
+                if (navClock) navClock.textContent = timeString;
+                const footerClock = document.getElementById('clock-footer');
+                if (footerClock) footerClock.textContent = `Pakistan Time: ${timeString}`;
+            } catch (e) { console.error("Clock error", e); }
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // --- 3. 3D Tilt Effect Logic ---
+        document.querySelectorAll('.tilt-card').forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                const rotateX = ((y - centerY) / centerY) * -5;
+                const rotateY = ((x - centerX) / centerX) * 5;
+                card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = `perspective(1000px) rotateX(0) rotateY(0) scale3d(1, 1, 1)`;
+            });
+        });
+
+        // --- 4. Reveal on Scroll ---
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+        // --- 5. Background Particles ---
+        const canvas = document.getElementById('particle-canvas');
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            let particles = [];
+            function resizeCanvas() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                initParticles();
+            }
+            window.addEventListener('resize', resizeCanvas);
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * canvas.width;
+                    this.y = Math.random() * canvas.height;
+                    this.size = Math.random() * 2 + 1;
+                    this.speedX = Math.random() * 1 - 0.5;
+                    this.speedY = Math.random() * 1 - 0.5;
+                }
+                update() {
+                    this.x += this.speedX;
+                    this.y += this.speedY;
+                    if (this.x > canvas.width || this.x < 0) this.speedX *= -1;
+                    if (this.y > canvas.height || this.y < 0) this.speedY *= -1;
+                }
+                draw() {
+                    ctx.fillStyle = 'rgba(59, 130, 246, 0.3)';
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            function initParticles() {
+                particles = [];
+                const count = (canvas.width * canvas.height) / 15000;
+                for (let i = 0; i < count; i++) particles.push(new Particle());
+            }
+            function animateParticles() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                for (let p of particles) { p.update(); p.draw(); }
+                for (let a = 0; a < particles.length; a++) {
+                    for (let b = a; b < particles.length; b++) {
+                        const dx = particles[a].x - particles[b].x;
+                        const dy = particles[a].y - particles[b].y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist < 100) {
+                            ctx.strokeStyle = `rgba(59, 130, 246, ${0.1 - dist / 1000})`;
+                            ctx.lineWidth = 0.5;
+                            ctx.beginPath();
+                            ctx.moveTo(particles[a].x, particles[a].y);
+                            ctx.lineTo(particles[b].x, particles[b].y);
+                            ctx.stroke();
+                        }
+                    }
+                }
+                requestAnimationFrame(animateParticles);
+            }
+            resizeCanvas();
+            animateParticles();
+        }
+
+        // --- 6. Modal Logic ---
+        const modal = document.getElementById('bookingModal');
+        function openModal() { if(modal) modal.classList.add('active'); }
+        function closeModal() { if(modal) modal.classList.remove('active'); }
+        if(modal) modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+        
+        function quickBook(type) {
+            const message = encodeURIComponent("Hi, I would like to book a lab test appointment.");
+            let url = type === 'whatsapp' ? `https://wa.me/${CONFIG.whatsappNumber}?text=${message}` : `sms:${CONFIG.smsNumber}?body=${message}`;
+            window.open(url, '_blank', 'noopener,noreferrer');
+            closeModal();
+        }
+
+        // --- 7. Mobile Menu Logic ---
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobileMenu');
+            if(menu) menu.classList.toggle('active');
+        }
+
+        // --- 8. Chatbot Logic ---
+        const chatBtn = document.getElementById('chatbotBtn');
+        const chatPanel = document.getElementById('chatbotPanel');
+        const chatIn = document.getElementById('chatInput');
+        const chatMsgs = document.getElementById('chatMessages');
+        let open = false;
+        if(chatBtn && chatPanel) {
+            chatBtn.onclick = () => { open = !open; chatPanel.classList.toggle('active', open); };
+        }
+        const replies = {
+            'book a test': 'You can book a test by filling the form in the Contact section, or by clicking the WhatsApp button directly.',
+            'prices': 'Pricing depends on the test. Contact us on WhatsApp for a detailed price list.',
+            'hours': 'We are open 24/7 for online bookings. Sample collection is typically from 8 AM to 8 PM.',
+            'default': 'Thank you for contacting Virtual Lab. Our team will assist you shortly.'
+        };
+        function addMessage(text, type) {
+            if (!chatMsgs) return;
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `chat-message ${type}`;
+            const bubble = document.createElement('div');
+            bubble.className = 'message-bubble';
+            bubble.textContent = text;
+            msgDiv.appendChild(bubble);
+            chatMsgs.appendChild(msgDiv);
+            chatMsgs.scrollTop = chatMsgs.scrollHeight;
+        }
+        if (chatMsgs && chatMsgs.children.length === 0) addMessage('Hello! How can Virtual Lab help you today?', 'bot');
+        
+        window.sendMsg = () => {
+            if (!chatIn) return;
+            const txt = chatIn.value.trim();
+            if(!txt) return;
+            addMessage(txt, 'user');
+            chatIn.value = '';
+            const key = txt.toLowerCase();
+            const reply = replies[key] || replies.default;
+            setTimeout(() => { addMessage(reply, 'bot'); }, 600);
+        };
+        document.querySelectorAll('.quick-option').forEach(b => {
+            b.onclick = () => { if(chatIn) { chatIn.value = b.dataset.msg; sendMsg(); } };
+        });
+
+        // --- 9. Form Handling ---
+        function handleBooking(type) {
+            const statusDiv = document.getElementById('formStatus');
+            const name = sanitize(document.getElementById('name').value);
+            const phone = sanitize(document.getElementById('phone').value);
+            const address = sanitize(document.getElementById('address').value);
+            const labChoice = sanitize(document.getElementById('labChoice').value);
+            const testType = sanitize(document.getElementById('testType').value);
+
+            if (!name || !phone || !address || !labChoice) {
+                statusDiv.textContent = "Please fill in all required fields.";
+                statusDiv.className = "form-status error";
+                return;
+            }
+
+            let messageBody = 
+                `*New Appointment Request*%0A` +
+                `----------------------------%0A` +
+                `*Name:* ${encodeURIComponent(name)}%0A` +
+                `*Phone:* ${encodeURIComponent(phone)}%0A` +
+                `*Address:* ${encodeURIComponent(address)}%0A` +
+                `*Preferred Lab:* ${encodeURIComponent(labChoice)}%0A`;
+            if (testType) messageBody += `*Test Type:* ${encodeURIComponent(testType)}%0A`;
+            messageBody += `----------------------------%0A_Sent from ${CONFIG.businessName} Website_`;
+
+            let url = type === 'whatsapp' ? `https://wa.me/${CONFIG.whatsappNumber}?text=${messageBody}` : `sms:${CONFIG.smsNumber}?body=${messageBody}`;
+            window.open(url, '_blank', 'noopener,noreferrer');
+            statusDiv.textContent = type === 'whatsapp' ? "Opening WhatsApp..." : "Opening SMS App...";
+            statusDiv.className = "form-status success";
+        }
+    </script>
+</body>
+</html>
